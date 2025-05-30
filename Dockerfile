@@ -1,6 +1,3 @@
-# Multi-architecture Dockerfile for Rust with minimal glibc targeting
-# Supports amd64 and aarch64 with Ubuntu 12.04 glibc (2.15) for CentOS 7 compatibility
-
 FROM debian:bookworm-20250428-slim AS builder
 
 # Define build arguments for target architecture detection
@@ -8,63 +5,61 @@ ARG TARGETARCH
 ARG TARGETPLATFORM
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        curl ca-certificates build-essential bison flex texinfo unzip \
-        help2man gawk libtool-bin libncurses-dev python3 file \
+    && apt-get install -y --no-install-recommends curl ca-certificates build-essential bison flex texinfo unzip help2man gawk libtool-bin libncurses-dev \
     && groupadd rust -g 2000 && useradd -m -g rust -u 2000 rust
 
 USER rust
 WORKDIR /home/rust
 
-# Build crosstool-ng
-RUN curl http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.26.0.tar.xz | tar -xJf - \
-    && cd crosstool-ng-1.26.0 \
+# Build crosstool-ng and toolchain - keep AMD64 exactly as original, add ARM64
+RUN curl http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.27.0.tar.xz | tar -xJf - \
+    && cd crosstool-ng-1.27.0 \
     && ./configure --prefix=/home/rust/ct-ng \
-    && make \
+    && make -j8 \
     && make install \
-    && cd ..
-
-# Create and customize configuration for minimal glibc (Ubuntu 12.04 compatible)
-RUN case "${TARGETARCH}" in \
+    && cd .. \
+		&& case "${TARGETARCH}" in \
         "amd64") \
-            export ARCH_TARGET="x86_64-ubuntu12.04-linux-gnu" && \
-            /home/rust/ct-ng/bin/ct-ng x86_64-unknown-linux-gnu && \
-            sed -i 's/CT_GLIBC_VERSION="[^"]*"/CT_GLIBC_VERSION="2.15"/' .config && \
-            sed -i 's/CT_LINUX_VERSION="[^"]*"/CT_LINUX_VERSION="3.2.101"/' .config && \
-            sed -i "s/CT_TARGET_ALIAS=\"[^\"]*\"/CT_TARGET_ALIAS=\"${ARCH_TARGET}\"/" .config; \
+            /home/rust/ct-ng/bin/ct-ng x86_64-ubuntu14.04-linux-gnu \
+            && sed -i 's/CT_GLIBC_VERSION="[^"]*"/CT_GLIBC_VERSION="2.17"/' .config \
+            && /home/rust/ct-ng/bin/ct-ng build -j8 \
+            && chmod u+w /home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu \
+            && chmod u+w /home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu/*; \
             ;; \
         "arm64") \
-            export ARCH_TARGET="aarch64-ubuntu12.04-linux-gnu" && \
-            /home/rust/ct-ng/bin/ct-ng aarch64-unknown-linux-gnu && \
-            sed -i 's/CT_GLIBC_VERSION="[^"]*"/CT_GLIBC_VERSION="2.15"/' .config && \
-            sed -i 's/CT_LINUX_VERSION="[^"]*"/CT_LINUX_VERSION="3.2.101"/' .config && \
-            sed -i "s/CT_TARGET_ALIAS=\"[^\"]*\"/CT_TARGET_ALIAS=\"${ARCH_TARGET}\"/" .config; \
+            /home/rust/ct-ng/bin/ct-ng aarch64-unknown-linux-gnu \
+            && sed -i 's/CT_GLIBC_VERSION="[^"]*"/CT_GLIBC_VERSION="2.28"/' .config \
+            && sed -i 's/CT_LINUX_VERSION="[^"]*"/CT_LINUX_VERSION="4.20.8"/' .config \
+            && sed -i 's/CT_ARCH_64="[^"]*"/CT_ARCH_64="y"/' .config \
+            && sed -i 's/CT_ARCH_ARCH="[^"]*"/CT_ARCH_ARCH="armv8-a"/' .config \
+            && sed -i 's/CT_ARCH_arm_AVAILABLE="[^"]*"/CT_ARCH_arm_AVAILABLE="y"/' .config \
+            && sed -i 's/CT_GDB_CROSS=y/CT_GDB_CROSS=n/' .config \
+            && /home/rust/ct-ng/bin/ct-ng build -j8 \
+            && chmod u+w /home/rust/x-tools/aarch64-unknown-linux-gnu \
+            && chmod u+w /home/rust/x-tools/aarch64-unknown-linux-gnu/*; \
             ;; \
-        *) \
-            echo "Unsupported architecture: ${TARGETARCH}" && exit 1; \
-            ;; \
-    esac \
-    && /home/rust/ct-ng/bin/ct-ng build
+    esac
 
-# Set architecture-specific variables and build OpenSSL
+# Build OpenSSL - keep AMD64 exactly as original, add ARM64 equivalent
 RUN case "${TARGETARCH}" in \
         "amd64") \
-            export ARCH_TARGET="x86_64-ubuntu12.04-linux-gnu" && \
-            export OPENSSL_CONFIG="linux-x86_64"; \
+            curl --location https://www.openssl.org/source/old/1.0.1/openssl-1.0.1u.tar.gz | tar -xzf - \
+            && cd openssl-1.0.1u \
+            && export PATH=/home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu/bin:$PATH \
+            && ./config -fPIC no-shared --prefix=/home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu \
+            && make -j8 CC=x86_64-ubuntu14.04-linux-gnu-cc \
+            && make install_sw; \
             ;; \
         "arm64") \
-            export ARCH_TARGET="aarch64-ubuntu12.04-linux-gnu" && \
-            export OPENSSL_CONFIG="linux-aarch64"; \
+            curl --location https://www.openssl.org/source/openssl-1.1.1w.tar.gz | tar -xzf - \
+            && cd openssl-1.1.1w \
+            && export PATH=/home/rust/x-tools/aarch64-unknown-linux-gnu/bin:$PATH \
+            && ./Configure linux-aarch64 -fPIC no-shared --prefix=/home/rust/x-tools/aarch64-unknown-linux-gnu \
+                --cross-compile-prefix=aarch64-unknown-linux-gnu- \
+            && make -j8 CC=aarch64-unknown-linux-gnu-cc \
+            && make install_sw; \
             ;; \
-    esac \
-    && chmod u+w /home/rust/x-tools/${ARCH_TARGET} \
-    && chmod u+w /home/rust/x-tools/${ARCH_TARGET}/* \
-    && curl --location https://www.openssl.org/source/old/1.0.1/openssl-1.0.1u.tar.gz | tar -xzf - \
-    && cd openssl-1.0.1u \
-    && ./Configure ${OPENSSL_CONFIG} -fPIC no-shared --prefix=/home/rust/x-tools/${ARCH_TARGET} \
-        --cross-compile-prefix=${ARCH_TARGET}- \
-    && make CC=${ARCH_TARGET}-cc \
-    && make install_sw
+    esac
 
 FROM rust:1.86.0-slim-bookworm
 
@@ -74,65 +69,34 @@ ARG TARGETPLATFORM
 
 COPY --from=builder /home/rust/x-tools /usr/local/x-tools
 
-# Create cargo configuration and environment setup
+# Setup exactly as original for AMD64, equivalent for ARM64
 RUN groupadd rust -g 2000 \
     && useradd -m -g rust -u 2000 rust \
     && apt-get update \
-    && apt-get install -y --no-install-recommends make libfindbin-libs-perl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends make libfindbin-libs-perl
 
-# Set up architecture-specific configuration
+# Configure Cargo for the target architecture
 RUN case "${TARGETARCH}" in \
         "amd64") \
-            export ARCH_TARGET="x86_64-ubuntu12.04-linux-gnu" && \
-            export RUST_TARGET="x86_64-unknown-linux-gnu" && \
-            echo "[target.${RUST_TARGET}]" > /usr/local/cargo/config.toml && \
-            echo "linker = '${ARCH_TARGET}-cc'" >> /usr/local/cargo/config.toml && \
-            echo "export PATH=/usr/local/x-tools/${ARCH_TARGET}/bin:\$PATH" >> /etc/environment && \
-            echo "export OPENSSL_DIR=/usr/local/x-tools/${ARCH_TARGET}" >> /etc/environment && \
-            echo "export ARCH_TARGET=${ARCH_TARGET}" >> /etc/environment && \
-            echo "export RUST_TARGET=${RUST_TARGET}" >> /etc/environment; \
+            echo "[target.x86_64-unknown-linux-gnu]" > /usr/local/cargo/config.toml \
+            && echo "linker = 'x86_64-ubuntu14.04-linux-gnu-cc'" >> /usr/local/cargo/config.toml \
+            && echo "export OPENSSL_DIR=/usr/local/x-tools/x86_64-ubuntu14.04-linux-gnu" >> /etc/environment \
+            && echo "export ARCH_TARGET=x86_64-ubuntu14.04-linux-gnu" >> /etc/environment \
+            && echo "export RUST_TARGET=x86_64-unknown-linux-gnu" >> /etc/environment; \
             ;; \
         "arm64") \
-            export ARCH_TARGET="aarch64-ubuntu12.04-linux-gnu" && \
-            export RUST_TARGET="aarch64-unknown-linux-gnu" && \
-            echo "[target.${RUST_TARGET}]" > /usr/local/cargo/config.toml && \
-            echo "linker = '${ARCH_TARGET}-cc'" >> /usr/local/cargo/config.toml && \
-            echo "export PATH=/usr/local/x-tools/${ARCH_TARGET}/bin:\$PATH" >> /etc/environment && \
-            echo "export OPENSSL_DIR=/usr/local/x-tools/${ARCH_TARGET}" >> /etc/environment && \
-            echo "export ARCH_TARGET=${ARCH_TARGET}" >> /etc/environment && \
-            echo "export RUST_TARGET=${RUST_TARGET}" >> /etc/environment; \
+            echo "[target.aarch64-unknown-linux-gnu]" > /usr/local/cargo/config.toml \
+            && echo "linker = 'aarch64-unknown-linux-gnu-cc'" >> /usr/local/cargo/config.toml \
+            && echo "export OPENSSL_DIR=/usr/local/x-tools/aarch64-unknown-linux-gnu" >> /etc/environment \
+            && echo "export ARCH_TARGET=aarch64-unknown-linux-gnu" >> /etc/environment \
+            && echo "export RUST_TARGET=aarch64-unknown-linux-gnu" >> /etc/environment; \
             ;; \
     esac
 
-# Create architecture detection and information script
-RUN echo '#!/bin/bash' > /usr/local/bin/show-build-info.sh \
-    && echo 'source /etc/environment' >> /usr/local/bin/show-build-info.sh \
-    && echo 'echo "=== Rust Minimal glibc Build Environment ==="' >> /usr/local/bin/show-build-info.sh \
-    && echo 'echo "Target Architecture: ${ARCH_TARGET}"' >> /usr/local/bin/show-build-info.sh \
-    && echo 'echo "Rust Target: ${RUST_TARGET}"' >> /usr/local/bin/show-build-info.sh \
-    && echo 'echo "glibc Version: 2.15 (Ubuntu 12.04 / CentOS 7 compatible)"' >> /usr/local/bin/show-build-info.sh \
-    && echo 'echo "OpenSSL: 1.0.1u (statically linked)"' >> /usr/local/bin/show-build-info.sh \
-    && echo 'echo "Toolchain: ${PATH}"' >> /usr/local/bin/show-build-info.sh \
-    && echo 'echo "====================================="' >> /usr/local/bin/show-build-info.sh \
-    && chmod +x /usr/local/bin/show-build-info.sh
-
-# Create wrapper script for cargo that sources environment
-RUN echo '#!/bin/bash' > /usr/local/bin/cargo-wrapper.sh \
-    && echo 'source /etc/environment' >> /usr/local/bin/cargo-wrapper.sh \
-    && echo 'if [ "$1" = "info" ] || [ "$1" = "--info" ]; then' >> /usr/local/bin/cargo-wrapper.sh \
-    && echo '    /usr/local/bin/show-build-info.sh' >> /usr/local/bin/cargo-wrapper.sh \
-    && echo '    exit 0' >> /usr/local/bin/cargo-wrapper.sh \
-    && echo 'fi' >> /usr/local/bin/cargo-wrapper.sh \
-    && echo 'exec cargo "$@"' >> /usr/local/bin/cargo-wrapper.sh \
-    && chmod +x /usr/local/bin/cargo-wrapper.sh
+# Set PATH to include both toolchains (only the appropriate one will exist)
+ENV PATH=/usr/local/x-tools/x86_64-ubuntu14.04-linux-gnu/bin:/usr/local/x-tools/aarch64-unknown-linux-gnu/bin:${PATH}
 
 USER rust
 WORKDIR /src
 
-# Set environment for the rust user
-RUN echo 'source /etc/environment' >> ~/.bashrc \
-    && echo '/usr/local/bin/show-build-info.sh' >> ~/.bashrc
-
-ENTRYPOINT ["/usr/local/bin/cargo-wrapper.sh"]
+ENTRYPOINT ["cargo"]

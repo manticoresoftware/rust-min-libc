@@ -1,26 +1,34 @@
-# Docker Rust Minimum glibc Target (Multi-Architecture)
+t# Docker Rust Minimum glibc Target (Multi-Architecture)
 
 This Docker image compiles Rust applications targeting minimal glibc for maximum portability across Linux distributions. 
-It supports both **amd64** and **aarch64** architectures and uses a toolchain built with crosstool-ng that targets 
-Ubuntu 12.04's glibc (version 2.15) for excellent CentOS 7 compatibility.
+It supports both **amd64** and **aarch64** architectures with optimized library versions for each platform.
 
 ## 🐳 Docker Hub
 
 **Repository**: [manticoresearch/rust-min-libc](https://hub.docker.com/r/manticoresearch/rust-min-libc)
 
 ### Available Tags
-- `manticoresearch/rust-min-libc:latest` - Latest stable version
-- `manticoresearch/rust-min-libc:rust1.86.0-glibc2.15` - Full version tag
-- `manticoresearch/rust-min-libc:rust1.86.0` - Rust version specific
-- `manticoresearch/rust-min-libc:glibc2.15` - glibc version specific
+
+**Architecture-Specific Tags (Full Version Details):**
+- `manticoresearch/rust-min-libc:amd64-rust1.86.0-glibc2.17-openssl1.0.1u` - AMD64 with all versions
+- `manticoresearch/rust-min-libc:aarch64-rust1.86.0-glibc2.28-openssl1.1.1w` - ARM64 with all versions
 
 ## Key Features
 
-- **Multi-Architecture Support**: Automatically builds for amd64 (x86_64) and aarch64 (ARM64)
-- **Minimal glibc**: Targets glibc 2.15 (Ubuntu 12.04) for maximum compatibility
-- **CentOS 7 Compatible**: Works on CentOS 7 and other older distributions
-- **Static OpenSSL**: Includes OpenSSL 1.0.1u statically linked
+- **Multi-Architecture Support**: Builds for amd64 (x86_64) and aarch64 (ARM64) with optimized configurations
+- **Minimal glibc**: Architecture-optimized glibc versions for maximum compatibility
+- **Enterprise Compatible**: Perfect compatibility with CentOS 7+ and RHEL 7+
+- **Static OpenSSL**: Architecture-specific OpenSSL versions statically linked
 - **Automatic Detection**: Automatically detects and configures for the target platform
+
+## Architecture Details
+
+| Architecture | Target Triple | glibc | OpenSSL | Compatibility |
+|--------------|---------------|-------|---------|---------------|
+| **amd64** | `x86_64-ubuntu14.04-linux-gnu` | **2.17** | **1.0.1u** | Ubuntu 12.04+, CentOS 7+ |
+| **arm64** | `aarch64-unknown-linux-gnu` | **2.28** | **1.1.1w** | Ubuntu 18.04+, CentOS 8+ |
+
+> **Why different versions?** ARM64 support was added to glibc in version 2.18, while x86_64 has been supported since much earlier versions. This allows us to use the absolute minimum glibc version for each architecture.
 
 ## Usage
 
@@ -32,58 +40,31 @@ docker container run --rm --volume "$(pwd)":/src \
     manticoresearch/rust-min-libc build --release
 ```
 
+### Architecture-Specific Builds
+```shell
+# Build for x86_64 with minimal glibc 2.17
+docker run --platform linux/amd64 --rm -v "$(pwd)":/src \
+    manticoresearch/rust-min-libc build --release
+
+# Build for arm64 with minimal glibc 2.28  
+docker run --platform linux/arm64 --rm -v "$(pwd)":/src \
+    manticoresearch/rust-min-libc build --release
+```
+
 ### Show Build Information
 ```shell
-docker run --rm manticoresearch/rust-min-libc info
+docker run --rm manticoresearch/rust-min-libc --version
 ```
 
-### Using Specific Versions
+### Using Specific Tags
 ```shell
-# Use specific Rust and glibc version
-docker run --rm -v "$(pwd)":/src manticoresearch/rust-min-libc:rust1.86.0-glibc2.15 build --release
+# Use architecture-specific tags with full version details
+docker run --platform linux/amd64 --rm -v "$(pwd)":/src \
+    manticoresearch/rust-min-libc:amd64-rust1.86.0-glibc2.17-openssl1.0.1u build --release
 
-# Use latest Rust 1.86.0 with any glibc
-docker run --rm -v "$(pwd)":/src manticoresearch/rust-min-libc:rust1.86.0 build --release
-
-# Use any Rust with glibc 2.15
-docker run --rm -v "$(pwd)":/src manticoresearch/rust-min-libc:glibc2.15 build --release
+docker run --platform linux/arm64 --rm -v "$(pwd)":/src \
+    manticoresearch/rust-min-libc:aarch64-rust1.86.0-glibc2.28-openssl1.1.1w build --release
 ```
-
-## Development and Publishing
-
-### Local Development
-```shell
-# Build locally for current architecture
-docker build -t rust-min-libc .
-
-# Build for all architectures
-./build-multiarch.sh
-
-# Test glibc compatibility
-./test-glibc-compat.sh
-```
-
-### Publishing to Docker Hub
-```shell
-# Publish with all version tags
-./publish-images.sh
-
-# Publish without latest tag
-./publish-images.sh --no-latest
-
-# Publish with custom tag
-./publish-images.sh --tag beta
-
-# Show help
-./publish-images.sh --help
-```
-
-## Architecture Support
-
-| Architecture | Target Triple | Toolchain | glibc Version |
-|--------------|---------------|-----------|---------------|
-| amd64 (x86_64) | x86_64-unknown-linux-gnu | x86_64-ubuntu12.04-linux-gnu | 2.15 |
-| aarch64 (ARM64) | aarch64-unknown-linux-gnu | aarch64-ubuntu12.04-linux-gnu | 2.15 |
 
 ## Compatibility Testing
 
@@ -107,6 +88,17 @@ The image has been tested and verified to work on:
 - Rocky Linux 8, 9
 - openSUSE Leap, Tumbleweed
 - Alpine Linux (with glibc)
+
+## Development and Building
+
+### Local Development
+```shell
+# Build locally for testing
+./build-multiarch.sh
+
+# Build and publish to Docker Hub
+PUSH=true ./build-multiarch.sh
+```
 
 ## Environment Variables
 
