@@ -4,6 +4,16 @@ This Docker image compiles Rust applications targeting minimal glibc for maximum
 It supports both **amd64** and **aarch64** architectures and uses a toolchain built with crosstool-ng that targets 
 Ubuntu 12.04's glibc (version 2.15) for excellent CentOS 7 compatibility.
 
+## 🐳 Docker Hub
+
+**Repository**: [manticoresearch/rust-min-libc](https://hub.docker.com/r/manticoresearch/rust-min-libc)
+
+### Available Tags
+- `manticoresearch/rust-min-libc:latest` - Latest stable version
+- `manticoresearch/rust-min-libc:rust1.86.0-glibc2.15` - Full version tag
+- `manticoresearch/rust-min-libc:rust1.86.0` - Rust version specific
+- `manticoresearch/rust-min-libc:glibc2.15` - glibc version specific
+
 ## Key Features
 
 - **Multi-Architecture Support**: Automatically builds for amd64 (x86_64) and aarch64 (ARM64)
@@ -19,39 +29,53 @@ Build a Rust project (automatically detects architecture):
 ```shell
 docker container run --rm --volume "$(pwd)":/src \
     --user "$(id --user):$(id --group)" \
-    rust-min-libc build --release
+    manticoresearch/rust-min-libc build --release
 ```
 
 ### Show Build Information
 ```shell
-docker run --rm rust-min-libc info
+docker run --rm manticoresearch/rust-min-libc info
 ```
 
-### Multi-Architecture Build
-Build the Docker image for both architectures:
+### Using Specific Versions
 ```shell
+# Use specific Rust and glibc version
+docker run --rm -v "$(pwd)":/src manticoresearch/rust-min-libc:rust1.86.0-glibc2.15 build --release
+
+# Use latest Rust 1.86.0 with any glibc
+docker run --rm -v "$(pwd)":/src manticoresearch/rust-min-libc:rust1.86.0 build --release
+
+# Use any Rust with glibc 2.15
+docker run --rm -v "$(pwd)":/src manticoresearch/rust-min-libc:glibc2.15 build --release
+```
+
+## Development and Publishing
+
+### Local Development
+```shell
+# Build locally for current architecture
+docker build -t rust-min-libc .
+
+# Build for all architectures
 ./build-multiarch.sh
-```
 
-### Test glibc Compatibility
-```shell
+# Test glibc compatibility
 ./test-glibc-compat.sh
 ```
 
-## Building the Image
-
-### Local Build (Current Architecture)
+### Publishing to Docker Hub
 ```shell
-docker build -t rust-min-libc .
-```
+# Publish with all version tags
+./publish-images.sh
 
-### Multi-Architecture Build
-```shell
-# Build for both amd64 and arm64
-./build-multiarch.sh
+# Publish without latest tag
+./publish-images.sh --no-latest
 
-# Or manually:
-docker buildx build --platform linux/amd64,linux/arm64 -t rust-min-libc .
+# Publish with custom tag
+./publish-images.sh --tag beta
+
+# Show help
+./publish-images.sh --help
 ```
 
 ## Architecture Support

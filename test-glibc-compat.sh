@@ -5,7 +5,7 @@
 
 set -e
 
-IMAGE_NAME="${IMAGE_NAME:-rust-min-libc}"
+IMAGE_NAME="${IMAGE_NAME:-manticoresearch/rust-min-libc}"
 TAG="${TAG:-latest}"
 
 echo "Testing glibc compatibility for ${IMAGE_NAME}:${TAG}"
