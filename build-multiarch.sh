@@ -6,7 +6,7 @@
 
 set -e
 
-IMAGE_NAME="${IMAGE_NAME:-manticoresearch/rust-min-libc}"
+IMAGE_NAME="${IMAGE_NAME:-ghcr.io/manticoresoftware/rust-min-libc}"
 PUSH="${PUSH:-false}"  # Set to true for publishing to registry
 
 # Configuration
@@ -41,13 +41,16 @@ echo ""
 
 if [ "$PUSH" = "true" ]; then
     echo "Images will be pushed to registry"
+    echo "Checking authentication..."
     
-    # Check if user is logged in to Docker Hub
-    if ! docker info | grep -q "Username"; then
-        echo "⚠️  You don't appear to be logged in to Docker Hub"
-        echo "Please run: docker login"
+    # Test authentication
+    if ! docker login ghcr.io --password-stdin <<< "" 2>/dev/null; then
+        echo "⚠️  Please log in to GitHub Container Registry:"
+        echo "  docker login ghcr.io"
+        echo "  OR with token: echo \$GITHUB_TOKEN | docker login ghcr.io -u <username> --password-stdin"
         exit 1
     fi
+    echo "✅ Authentication successful"
 else
     echo "Images will be built locally only (no push)"
     echo "Set PUSH=true to publish to registry"
@@ -95,7 +98,7 @@ if [ "$PUSH" = "true" ]; then
     echo "  docker buildx imagetools inspect ${IMAGE_NAME}:${AMD64_TAG}"
     echo "  docker buildx imagetools inspect ${IMAGE_NAME}:${ARM64_TAG}"
     echo ""
-    echo "🔗 Docker Hub: https://hub.docker.com/r/${IMAGE_NAME}"
+    echo "🔗 GitHub Container Registry: https://github.com/manticoresoftware/manticore/pkgs/container/rust-min-libc"
 fi
 
 echo "📋 Usage examples:"

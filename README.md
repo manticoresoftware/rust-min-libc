@@ -3,15 +3,15 @@ t# Docker Rust Minimum glibc Target (Multi-Architecture)
 This Docker image compiles Rust applications targeting minimal glibc for maximum portability across Linux distributions. 
 It supports both **amd64** and **aarch64** architectures with optimized library versions for each platform.
 
-## 🐳 Docker Hub
+## 🐳 GitHub Container Registry
 
-**Repository**: [manticoresearch/rust-min-libc](https://hub.docker.com/r/manticoresearch/rust-min-libc)
+**Repository**: [ghcr.io/manticoresoftware/rust-min-libc](https://github.com/manticoresoftware/manticore/pkgs/container/rust-min-libc)
 
 ### Available Tags
 
 **Architecture-Specific Tags (Full Version Details):**
-- `manticoresearch/rust-min-libc:amd64-rust1.86.0-glibc2.17-openssl1.0.1u` - AMD64 with all versions
-- `manticoresearch/rust-min-libc:aarch64-rust1.86.0-glibc2.28-openssl1.1.1w` - ARM64 with all versions
+- `ghcr.io/manticoresoftware/rust-min-libc:amd64-rust1.86.0-glibc2.17-openssl1.0.1u` - AMD64 with all versions
+- `ghcr.io/manticoresoftware/rust-min-libc:aarch64-rust1.86.0-glibc2.28-openssl1.1.1w` - ARM64 with all versions
 
 ## Key Features
 
@@ -37,33 +37,33 @@ Build a Rust project (automatically detects architecture):
 ```shell
 docker container run --rm --volume "$(pwd)":/src \
     --user "$(id --user):$(id --group)" \
-    manticoresearch/rust-min-libc build --release
+    ghcr.io/manticoresoftware/rust-min-libc build --release
 ```
 
 ### Architecture-Specific Builds
 ```shell
 # Build for x86_64 with minimal glibc 2.17
 docker run --platform linux/amd64 --rm -v "$(pwd)":/src \
-    manticoresearch/rust-min-libc build --release
+    ghcr.io/manticoresoftware/rust-min-libc build --release
 
 # Build for arm64 with minimal glibc 2.28  
 docker run --platform linux/arm64 --rm -v "$(pwd)":/src \
-    manticoresearch/rust-min-libc build --release
+    ghcr.io/manticoresoftware/rust-min-libc build --release
 ```
 
 ### Show Build Information
 ```shell
-docker run --rm manticoresearch/rust-min-libc --version
+docker run --rm ghcr.io/manticoresoftware/rust-min-libc --version
 ```
 
 ### Using Specific Tags
 ```shell
 # Use architecture-specific tags with full version details
 docker run --platform linux/amd64 --rm -v "$(pwd)":/src \
-    manticoresearch/rust-min-libc:amd64-rust1.86.0-glibc2.17-openssl1.0.1u build --release
+    ghcr.io/manticoresoftware/rust-min-libc:amd64-rust1.86.0-glibc2.17-openssl1.0.1u build --release
 
 docker run --platform linux/arm64 --rm -v "$(pwd)":/src \
-    manticoresearch/rust-min-libc:aarch64-rust1.86.0-glibc2.28-openssl1.1.1w build --release
+    ghcr.io/manticoresoftware/rust-min-libc:aarch64-rust1.86.0-glibc2.28-openssl1.1.1w build --release
 ```
 
 ## Compatibility Testing
@@ -96,7 +96,7 @@ The image has been tested and verified to work on:
 # Build locally for testing
 ./build-multiarch.sh
 
-# Build and publish to Docker Hub
+# Build and publish to GitHub Container Registry
 PUSH=true ./build-multiarch.sh
 ```
 
@@ -117,15 +117,15 @@ it can build x86_64 binaries, and vice versa:
 
 ```shell
 # Force specific platform
-docker run --platform linux/amd64 --rm -v "$(pwd)":/src rust-min-libc build --release
-docker run --platform linux/arm64 --rm -v "$(pwd)":/src rust-min-libc build --release
+docker run --platform linux/amd64 --rm -v "$(pwd)":/src ghcr.io/manticoresoftware/rust-min-libc build --release
+docker run --platform linux/arm64 --rm -v "$(pwd)":/src ghcr.io/manticoresoftware/rust-min-libc build --release
 ```
 
 ### Custom Cargo Configuration
 The image includes a pre-configured `cargo` config for cross-compilation, but you can override it:
 
 ```shell
-docker run --rm -v "$(pwd)":/src -v "$(pwd)/.cargo":/usr/local/cargo rust-min-libc build --release
+docker run --rm -v "$(pwd)":/src -v "$(pwd)/.cargo":/usr/local/cargo ghcr.io/manticoresoftware/rust-min-libc build --release
 ```
 
 ## Credits
