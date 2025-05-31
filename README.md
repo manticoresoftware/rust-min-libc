@@ -1,4 +1,6 @@
-t# Docker Rust Minimum glibc Target (Multi-Architecture)
+# Docker Rust Minimum glibc Target (Multi-Architecture)
+
+[![Build and Push](https://github.com/manticoresoftware/manticore/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/manticoresoftware/manticore/actions/workflows/build-and-push.yml)
 
 This Docker image compiles Rust applications targeting minimal glibc for maximum portability across Linux distributions. 
 It supports both **amd64** and **aarch64** architectures with optimized library versions for each platform.
@@ -91,14 +93,31 @@ The image has been tested and verified to work on:
 
 ## Development and Building
 
+### GitHub Actions (Recommended)
+
+The repository includes a GitHub Actions workflow that automatically builds and pushes images to GHCR:
+
+**Automatic Triggers:**
+- ✅ Push to `main` or `master` branch
+- ✅ Git tags starting with `v*`
+- ✅ Manual trigger via GitHub Actions UI
+
+**Manual Trigger:**
+1. Go to **Actions** tab in your GitHub repository
+2. Select **"Build and Push Multi-Architecture Docker Images"**
+3. Click **"Run workflow"**
+4. Choose branch and push option
+
 ### Local Development
 ```shell
 # Build locally for testing
 ./build-multiarch.sh
 
-# Build and publish to GitHub Container Registry
+# Build and publish to GitHub Container Registry (manual)
 PUSH=true ./build-multiarch.sh
 ```
+
+**Note:** Using GitHub Actions is recommended as it handles authentication and permissions automatically.
 
 ## Environment Variables
 
