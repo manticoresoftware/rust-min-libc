@@ -1,4 +1,5 @@
 FROM debian:bookworm-20250428-slim AS builder
+LABEL org.opencontainers.image.source=https://github.com/manticoresoftware/rust-min-libc
 
 # Define build arguments for target architecture detection
 ARG TARGETARCH
