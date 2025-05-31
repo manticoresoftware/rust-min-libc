@@ -26,6 +26,22 @@ jobs:
 - **No Emulation**: Native builds are ~10x faster than emulated cross-compilation
 - **Parallel Execution**: Both architectures build simultaneously
 - **Optimized Caching**: Separate cache scopes for each architecture
+- **Smart Cancellation**: Old builds are cancelled when new commits are pushed
+
+### Concurrency Control
+The workflow uses GitHub's concurrency feature to prevent resource waste:
+
+```yaml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+```
+
+**How it works:**
+- **Same branch/PR**: New push cancels the old build
+- **Different branches**: Builds run independently  
+- **Tags**: Each tag gets its own build (no cancellation)
+- **Resource savings**: No wasted compute time on outdated code
 
 ## Generated Tags
 

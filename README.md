@@ -99,7 +99,7 @@ The repository includes a **high-performance GitHub Actions workflow** that buil
 
 **🚀 Native Builds:**
 - **AMD64**: Built on `ubuntu-24.04` (native x86_64)
-- **ARM64**: Built on `ubuntu-24.04-arm64` (native aarch64)
+- **ARM64**: Built on `ubuntu-24.04-arm` (native aarch64)
 - **Parallel**: Both architectures build simultaneously for maximum speed
 - **No Emulation**: ~10x faster than traditional cross-compilation
 
