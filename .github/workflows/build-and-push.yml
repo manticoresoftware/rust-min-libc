@@ -41,7 +41,6 @@ jobs:
       id-token: write
     outputs:
       amd64-tag: ${{ steps.tags.outputs.amd64-tag }}
-      amd64-digest: ${{ steps.build.outputs.digest }}
 
     steps:
       - name: Checkout repository
@@ -93,7 +92,6 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tags.outputs.amd64-tag }}
           cache-from: type=gha,scope=amd64
           cache-to: type=gha,mode=max,scope=amd64
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' && (github.event.inputs.push_images != 'false') }}
 
   build-arm64:
     runs-on: ubuntu-24.04-arm
@@ -103,7 +101,6 @@ jobs:
       id-token: write
     outputs:
       arm64-tag: ${{ steps.tags.outputs.arm64-tag }}
-      arm64-digest: ${{ steps.build.outputs.digest }}
 
     steps:
       - name: Checkout repository
@@ -143,7 +140,7 @@ jobs:
           echo "### ARM64 Build" >> $GITHUB_STEP_SUMMARY
           echo "**Tag**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ARM64_TAG}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Platform**: linux/arm64" >> $GITHUB_STEP_SUMMARY
-          echo "**Runner**: ubuntu-24.04-arm64" >> $GITHUB_STEP_SUMMARY
+          echo "**Runner**: ubuntu-24.04-arm" >> $GITHUB_STEP_SUMMARY
 
       - name: Build and push ARM64 image
         id: build
@@ -155,53 +152,15 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tags.outputs.arm64-tag }}
           cache-from: type=gha,scope=arm64
           cache-to: type=gha,mode=max,scope=arm64
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' && (github.event.inputs.push_images != 'false') }}
 
-  create-manifest:
+  verify-build:
     runs-on: ubuntu-24.04
     needs: [build-amd64, build-arm64]
     if: github.event_name != 'pull_request'
     permissions:
       contents: read
-      packages: write
 
     steps:
-      - name: Log in to Container Registry
-        run: |
-          # Try custom authentication first if variables are provided
-          if [ -n "$GHCR_USER" ]; then
-            echo "Using custom GHCR credentials..."
-            echo "$GHCR_PASSWORD" | docker login -u"$GHCR_USER" --password-stdin ghcr.io
-          else
-            echo "Using GitHub token authentication..."
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u"${{ github.actor }}" --password-stdin ghcr.io
-          fi
-          
-          # Verify authentication worked
-          if ! (docker info | grep Username) > /dev/null 2>&1; then
-            echo "Can't authorise to GHCR docker registry"
-            exit 1
-          fi
-          
-          echo "✅ Successfully authenticated to GitHub Container Registry"
-        env:
-          GHCR_USER: ${{ secrets.GHCR_USER }}
-          GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
-
-      - name: Create and push manifest lists
-        run: |
-          # Create manifest list for AMD64 tag pointing to both architectures
-          docker buildx imagetools create \
-            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-amd64.outputs.amd64-tag }} \
-            ${{ needs.build-amd64.outputs.amd64-digest }} \
-            ${{ needs.build-arm64.outputs.arm64-digest }}
-          
-          # Create manifest list for ARM64 tag pointing to both architectures  
-          docker buildx imagetools create \
-            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-arm64.outputs.arm64-tag }} \
-            ${{ needs.build-amd64.outputs.amd64-digest }} \
-            ${{ needs.build-arm64.outputs.arm64-digest }}
-
       - name: Verify and summarize
         run: |
           echo "### 🎉 Build Complete" >> $GITHUB_STEP_SUMMARY
@@ -210,14 +169,14 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Built Images:**" >> $GITHUB_STEP_SUMMARY
           echo "- **AMD64**: Built on \`ubuntu-24.04\` (native x86_64)" >> $GITHUB_STEP_SUMMARY
-          echo "- **ARM64**: Built on \`ubuntu-24.04-arm64\` (native aarch64)" >> $GITHUB_STEP_SUMMARY
+          echo "- **ARM64**: Built on \`ubuntu-24.04-arm\` (native aarch64)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Available Tags:**" >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
-          echo "# Pull AMD64 image (works on both platforms via manifest)" >> $GITHUB_STEP_SUMMARY
+          echo "# Pull AMD64 image" >> $GITHUB_STEP_SUMMARY
           echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-amd64.outputs.amd64-tag }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# Pull ARM64 image (works on both platforms via manifest)" >> $GITHUB_STEP_SUMMARY  
+          echo "# Pull ARM64 image" >> $GITHUB_STEP_SUMMARY  
           echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-arm64.outputs.arm64-tag }}" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

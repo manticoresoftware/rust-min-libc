@@ -4,7 +4,7 @@ This repository uses GitHub Actions to automatically build and push multi-archit
 
 ## Workflow Features
 
-- **🚀 Native Builds**: Uses `ubuntu-24.04` for AMD64 and `ubuntu-24.04-arm64` for ARM64
+- **🚀 Native Builds**: Uses `ubuntu-24.04` for AMD64 and `ubuntu-24.04-arm` for ARM64
 - **⚡ Parallel Execution**: Builds both architectures simultaneously for speed
 - **🛑 Smart Cancellation**: Automatically cancels old runs when new pushes happen
 - **🔒 Automatic Authentication**: Uses `GITHUB_TOKEN` for secure access to GHCR
@@ -18,8 +18,8 @@ This repository uses GitHub Actions to automatically build and push multi-archit
 ```yaml
 jobs:
   build-amd64:     # Runs on ubuntu-24.04 (native x86_64)
-  build-arm64:     # Runs on ubuntu-24.04-arm64 (native aarch64) 
-  create-manifest: # Combines both images with manifests
+  build-arm64:     # Runs on ubuntu-24.04-arm (native aarch64) 
+  verify-build:    # Reports build completion
 ```
 
 ### Performance Benefits
