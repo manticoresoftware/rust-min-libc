@@ -95,7 +95,13 @@ The image has been tested and verified to work on:
 
 ### GitHub Actions (Recommended)
 
-The repository includes a GitHub Actions workflow that automatically builds and pushes images to GHCR:
+The repository includes a **high-performance GitHub Actions workflow** that builds images using native runners:
+
+**🚀 Native Builds:**
+- **AMD64**: Built on `ubuntu-24.04` (native x86_64)
+- **ARM64**: Built on `ubuntu-24.04-arm64` (native aarch64)
+- **Parallel**: Both architectures build simultaneously for maximum speed
+- **No Emulation**: ~10x faster than traditional cross-compilation
 
 **Automatic Triggers:**
 - ✅ Push to `main` or `master` branch

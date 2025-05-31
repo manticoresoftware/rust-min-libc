@@ -1,23 +1,41 @@
 # GitHub Actions Workflow
 
-This repository uses GitHub Actions to automatically build and push multi-architecture Docker images to GitHub Container Registry (GHCR).
+This repository uses GitHub Actions to automatically build and push multi-architecture Docker images to GitHub Container Registry (GHCR) using **native runners** for maximum speed.
 
 ## Workflow Features
 
-- **Multi-Architecture Support**: Builds for both `linux/amd64` and `linux/arm64`
-- **Automatic Authentication**: Uses `GITHUB_TOKEN` for secure access to GHCR
-- **Caching**: Leverages GitHub Actions cache for faster builds
-- **Architecture-Specific Tags**: Creates detailed tags with all version information
-- **Smart Triggers**: Builds on pushes to main branches and tags
+- **🚀 Native Builds**: Uses `ubuntu-24.04` for AMD64 and `ubuntu-24.04-arm64` for ARM64
+- **⚡ Parallel Execution**: Builds both architectures simultaneously for speed
+- **🔒 Automatic Authentication**: Uses `GITHUB_TOKEN` for secure access to GHCR
+- **💾 Smart Caching**: Architecture-specific GitHub Actions cache
+- **🏷️ Architecture-Specific Tags**: Creates detailed tags with all version information
+- **📦 Manifest Creation**: Creates multi-arch manifests for seamless platform detection
+
+## Build Architecture
+
+### Job Structure
+```yaml
+jobs:
+  build-amd64:     # Runs on ubuntu-24.04 (native x86_64)
+  build-arm64:     # Runs on ubuntu-24.04-arm64 (native aarch64) 
+  create-manifest: # Combines both images with manifests
+```
+
+### Performance Benefits
+- **No Emulation**: Native builds are ~10x faster than emulated cross-compilation
+- **Parallel Execution**: Both architectures build simultaneously
+- **Optimized Caching**: Separate cache scopes for each architecture
 
 ## Generated Tags
 
-The workflow generates two architecture-specific tags:
+The workflow generates two architecture-specific tags with multi-arch manifests:
 
 ```
 ghcr.io/manticoresoftware/rust-min-libc:amd64-rust1.86.0-glibc2.17-openssl1.0.1u
 ghcr.io/manticoresoftware/rust-min-libc:aarch64-rust1.86.0-glibc2.28-openssl1.1.1w
 ```
+
+**Note**: Each tag works on both platforms - Docker automatically selects the correct architecture via the manifest.
 
 ## Triggers
 
