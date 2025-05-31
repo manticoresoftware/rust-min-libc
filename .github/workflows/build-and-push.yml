@@ -52,11 +52,26 @@ jobs:
 
       - name: Log in to Container Registry
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Try custom authentication first if variables are provided
+          if [ -n "$GHCR_USER" ]; then
+            echo "Using custom GHCR credentials..."
+            echo "$GHCR_PASSWORD" | docker login -u"$GHCR_USER" --password-stdin ghcr.io
+          else
+            echo "Using GitHub token authentication..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u"${{ github.actor }}" --password-stdin ghcr.io
+          fi
+          
+          # Verify authentication worked
+          if ! (docker info | grep Username) > /dev/null 2>&1; then
+            echo "Can't authorise to GHCR docker registry"
+            exit 1
+          fi
+          
+          echo "✅ Successfully authenticated to GitHub Container Registry"
+        env:
+          GHCR_USER: ${{ secrets.GHCR_USER }}
+          GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
 
       - name: Generate AMD64 tag
         id: tags
@@ -99,11 +114,26 @@ jobs:
 
       - name: Log in to Container Registry
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Try custom authentication first if variables are provided
+          if [ -n "$GHCR_USER" ]; then
+            echo "Using custom GHCR credentials..."
+            echo "$GHCR_PASSWORD" | docker login -u"$GHCR_USER" --password-stdin ghcr.io
+          else
+            echo "Using GitHub token authentication..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u"${{ github.actor }}" --password-stdin ghcr.io
+          fi
+          
+          # Verify authentication worked
+          if ! (docker info | grep Username) > /dev/null 2>&1; then
+            echo "Can't authorise to GHCR docker registry"
+            exit 1
+          fi
+          
+          echo "✅ Successfully authenticated to GitHub Container Registry"
+        env:
+          GHCR_USER: ${{ secrets.GHCR_USER }}
+          GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
 
       - name: Generate ARM64 tag
         id: tags
@@ -137,11 +167,26 @@ jobs:
 
     steps:
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Try custom authentication first if variables are provided
+          if [ -n "$GHCR_USER" ]; then
+            echo "Using custom GHCR credentials..."
+            echo "$GHCR_PASSWORD" | docker login -u"$GHCR_USER" --password-stdin ghcr.io
+          else
+            echo "Using GitHub token authentication..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u"${{ github.actor }}" --password-stdin ghcr.io
+          fi
+          
+          # Verify authentication worked
+          if ! (docker info | grep Username) > /dev/null 2>&1; then
+            echo "Can't authorise to GHCR docker registry"
+            exit 1
+          fi
+          
+          echo "✅ Successfully authenticated to GitHub Container Registry"
+        env:
+          GHCR_USER: ${{ secrets.GHCR_USER }}
+          GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
 
       - name: Create and push manifest lists
         run: |

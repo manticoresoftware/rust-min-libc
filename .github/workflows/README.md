@@ -82,6 +82,30 @@ env:
   ARM64_OPENSSL_VERSION: "1.1.1w"
 ```
 
+## Authentication Options
+
+The workflow supports two authentication methods:
+
+### Option 1: GitHub Token (Default)
+Uses the automatic `GITHUB_TOKEN` provided by GitHub Actions:
+- ✅ **No setup required**
+- ✅ **Automatic permissions**
+- ✅ **Secure by default**
+
+### Option 2: Custom Credentials (Optional)
+Uses custom GitHub Container Registry credentials via secrets:
+- 🔧 **Setup required**: Add `GHCR_USER` and `GHCR_PASSWORD` secrets
+- 🎯 **Use case**: Custom authentication requirements
+- 🔐 **Fallback**: Falls back to GitHub token if not provided
+
+**To use custom credentials:**
+1. Go to repository **Settings** → **Secrets and variables** → **Actions**
+2. Add `GHCR_USER` secret with your GitHub username
+3. Add `GHCR_PASSWORD` secret with your GitHub personal access token
+
+**Authentication verification:**
+The workflow automatically verifies authentication and fails fast if login doesn't work.
+
 ## Making Package Public
 
 After the first successful build, make the package public:
