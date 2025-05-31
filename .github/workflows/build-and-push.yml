@@ -19,6 +19,10 @@ on:
         default: 'true'
         type: boolean
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: manticoresoftware/rust-min-libc

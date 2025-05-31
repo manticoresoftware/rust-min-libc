@@ -6,6 +6,7 @@ This repository uses GitHub Actions to automatically build and push multi-archit
 
 - **🚀 Native Builds**: Uses `ubuntu-24.04` for AMD64 and `ubuntu-24.04-arm64` for ARM64
 - **⚡ Parallel Execution**: Builds both architectures simultaneously for speed
+- **🛑 Smart Cancellation**: Automatically cancels old runs when new pushes happen
 - **🔒 Automatic Authentication**: Uses `GITHUB_TOKEN` for secure access to GHCR
 - **💾 Smart Caching**: Architecture-specific GitHub Actions cache
 - **🏷️ Architecture-Specific Tags**: Creates detailed tags with all version information
