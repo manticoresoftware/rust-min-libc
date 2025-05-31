@@ -51,28 +51,25 @@ jobs:
 
       - name: Log in to Container Registry
         if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USER || github.actor }}
+          password: ${{ secrets.GHCR_PASSWORD || secrets.GITHUB_TOKEN }}
+
+      - name: Verify authentication
+        if: github.event_name != 'pull_request'
         run: |
-          # Try custom authentication first if variables are provided
-          if [ -n "$GHCR_USER" ]; then
-            echo "Using custom GHCR credentials..."
-            echo "$GHCR_PASSWORD" | docker login -u"$GHCR_USER" --password-stdin ghcr.io
-          else
-            echo "Using GitHub token authentication..."
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u"${{ github.actor }}" --password-stdin ghcr.io
-          fi
-          
-          # Verify authentication worked
-          if ! (docker info | grep Username) > /dev/null 2>&1; then
-            echo "❌ Can't authorise to GHCR docker registry"
-            exit 1
-          fi
-          
           # Show who we're authenticated as
           AUTH_USER=$(docker info | grep Username | awk '{print $2}' || echo "unknown")
           echo "✅ Successfully authenticated to GitHub Container Registry as: $AUTH_USER"
-        env:
-          GHCR_USER: ${{ secrets.GHCR_USER }}
-          GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
+          
+          # Show which credentials were used
+          if [ -n "${{ secrets.GHCR_USER }}" ]; then
+            echo "🔑 Using custom GHCR credentials (GHCR_USER: ${{ secrets.GHCR_USER }})"
+          else
+            echo "🔑 Using GitHub token authentication (actor: ${{ github.actor }})"
+          fi
 
       - name: Generate AMD64 tag
         id: tags
@@ -86,58 +83,37 @@ jobs:
 
       - name: Build and push AMD64 image
         id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push_images != 'false') }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tags.outputs.amd64-tag }}
+          cache-from: type=gha,scope=amd64
+          cache-to: type=gha,mode=max,scope=amd64
+
+      - name: Verify AMD64 push
+        if: github.event_name != 'pull_request' && (github.event.inputs.push_images != 'false')
         run: |
           AMD64_TAG="${{ steps.tags.outputs.amd64-tag }}"
+          echo "🔍 Verifying AMD64 image was pushed..."
           
-          # Create and use a new buildx builder instance
-          docker buildx create --name multiarch-builder --use 2>/dev/null || docker buildx use multiarch-builder
+          # Give registry some time to propagate
+          sleep 10
           
-          # Determine if we should push
-          SHOULD_PUSH="${{ github.event_name != 'pull_request' && (github.event.inputs.push_images != 'false') }}"
-          
-          if [ "$SHOULD_PUSH" = "true" ]; then
-            echo "Building and pushing AMD64 to: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${AMD64_TAG}"
-            
-            docker buildx build \
-              --platform linux/amd64 \
-              --tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${AMD64_TAG}" \
-              --push \
-              --progress=plain \
-              .
-            
-            BUILD_RESULT=$?
-            if [ $BUILD_RESULT -eq 0 ]; then
-              echo "✅ AMD64 build and push completed successfully"
+          # Try to pull the image to verify it exists
+          if docker pull "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${AMD64_TAG}" >/dev/null 2>&1; then
+            echo "✅ AMD64 image confirmed in registry (can pull)"
+            docker rmi "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${AMD64_TAG}" >/dev/null 2>&1 || true
+          else
+            echo "❌ AMD64 image NOT found in registry (cannot pull)"
+            echo "This might be a temporary registry delay, checking with buildx inspect..."
+            if docker buildx imagetools inspect "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${AMD64_TAG}" >/dev/null 2>&1; then
+              echo "✅ AMD64 image found via buildx imagetools"
             else
-              echo "❌ AMD64 build and push failed with exit code: $BUILD_RESULT"
+              echo "❌ AMD64 image verification failed completely"
               exit 1
             fi
-            
-            # Verify the image was pushed
-            echo "🔍 Verifying AMD64 image was pushed..."
-            sleep 10
-            
-            if docker pull "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${AMD64_TAG}" >/dev/null 2>&1; then
-              echo "✅ AMD64 image confirmed in registry (can pull)"
-              docker rmi "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${AMD64_TAG}" >/dev/null 2>&1 || true
-            else
-              echo "❌ AMD64 image NOT found in registry (cannot pull)"
-              echo "This might be a temporary registry delay, checking with buildx inspect..."
-              if docker buildx imagetools inspect "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${AMD64_TAG}" >/dev/null 2>&1; then
-                echo "✅ AMD64 image found via buildx imagetools"
-              else
-                echo "❌ AMD64 image verification failed completely"
-                exit 1
-              fi
-            fi
-          else
-            echo "Building AMD64 locally (no push)"
-            docker buildx build \
-              --platform linux/amd64 \
-              --tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${AMD64_TAG}" \
-              --load \
-              .
-            echo "✅ AMD64 loaded locally"
           fi
 
   build-arm64:
@@ -158,28 +134,25 @@ jobs:
 
       - name: Log in to Container Registry
         if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USER || github.actor }}
+          password: ${{ secrets.GHCR_PASSWORD || secrets.GITHUB_TOKEN }}
+
+      - name: Verify authentication
+        if: github.event_name != 'pull_request'
         run: |
-          # Try custom authentication first if variables are provided
-          if [ -n "$GHCR_USER" ]; then
-            echo "Using custom GHCR credentials..."
-            echo "$GHCR_PASSWORD" | docker login -u"$GHCR_USER" --password-stdin ghcr.io
-          else
-            echo "Using GitHub token authentication..."
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u"${{ github.actor }}" --password-stdin ghcr.io
-          fi
-          
-          # Verify authentication worked
-          if ! (docker info | grep Username) > /dev/null 2>&1; then
-            echo "❌ Can't authorise to GHCR docker registry"
-            exit 1
-          fi
-          
           # Show who we're authenticated as
           AUTH_USER=$(docker info | grep Username | awk '{print $2}' || echo "unknown")
           echo "✅ Successfully authenticated to GitHub Container Registry as: $AUTH_USER"
-        env:
-          GHCR_USER: ${{ secrets.GHCR_USER }}
-          GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
+          
+          # Show which credentials were used
+          if [ -n "${{ secrets.GHCR_USER }}" ]; then
+            echo "🔑 Using custom GHCR credentials (GHCR_USER: ${{ secrets.GHCR_USER }})"
+          else
+            echo "🔑 Using GitHub token authentication (actor: ${{ github.actor }})"
+          fi
 
       - name: Generate ARM64 tag
         id: tags
@@ -193,64 +166,36 @@ jobs:
 
       - name: Build and push ARM64 image
         id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/arm64
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push_images != 'false') }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tags.outputs.arm64-tag }}
+          cache-from: type=gha,scope=arm64
+          cache-to: type=gha,mode=max,scope=arm64
+
+      - name: Verify ARM64 push
+        if: github.event_name != 'pull_request' && (github.event.inputs.push_images != 'false')
         run: |
           ARM64_TAG="${{ steps.tags.outputs.arm64-tag }}"
+          echo "🔍 Verifying ARM64 image was pushed..."
           
-          # Create and use a new buildx builder instance
-          docker buildx create --name multiarch-builder --use 2>/dev/null || docker buildx use multiarch-builder
+          # Give registry some time to propagate
+          sleep 10
           
-          # Determine if we should push
-          SHOULD_PUSH="${{ github.event_name != 'pull_request' && (github.event.inputs.push_images != 'false') }}"
-          
-          if [ "$SHOULD_PUSH" = "true" ]; then
-            echo "Building and pushing ARM64 to: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ARM64_TAG}"
-            
-            docker buildx build \
-              --platform linux/arm64 \
-              --tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ARM64_TAG}" \
-              --push \
-              --progress=plain \
-              .
-            
-            BUILD_RESULT=$?
-            if [ $BUILD_RESULT -eq 0 ]; then
-              echo "✅ ARM64 build and push completed successfully"
-            else
-              echo "❌ ARM64 build and push failed with exit code: $BUILD_RESULT"
-              exit 1
-            fi
-            
-            # Verify the image was pushed
-            echo "🔍 Verifying ARM64 image was pushed..."
-            sleep 10
-            
-            if docker pull "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ARM64_TAG}" >/dev/null 2>&1; then
-              echo "✅ ARM64 image confirmed in registry (can pull)"
-              docker rmi "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ARM64_TAG}" >/dev/null 2>&1 || true
-            else
-              echo "❌ ARM64 image NOT found in registry (cannot pull)"
-              echo "This might be a temporary registry delay, checking with buildx inspect..."
-              if docker buildx imagetools inspect "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ARM64_TAG}" >/dev/null 2>&1; then
-                echo "✅ ARM64 image found via buildx imagetools"
-              else
-                echo "❌ ARM64 image verification failed completely"
-                exit 1
-              fi
-            fi
+          # Try to pull the image to verify it exists (ARM64 runner can pull ARM64)
+          if docker pull "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ARM64_TAG}" >/dev/null 2>&1; then
+            echo "✅ ARM64 image confirmed in registry (can pull)"
+            docker rmi "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ARM64_TAG}" >/dev/null 2>&1 || true
           else
-            echo "Building ARM64 locally (no push)"
-            # Note: Can't load ARM64 on non-ARM machines
-            CURRENT_ARCH=$(docker version --format '{{.Server.Arch}}')
-            if [ "$CURRENT_ARCH" = "arm64" ]; then
-              docker buildx build \
-                --platform linux/arm64 \
-                --tag "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ARM64_TAG}" \
-                --load \
-                .
-              echo "✅ ARM64 loaded locally"
+            echo "❌ ARM64 image NOT found in registry (cannot pull)"
+            echo "This might be a temporary registry delay, checking with buildx inspect..."
+            if docker buildx imagetools inspect "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ARM64_TAG}" >/dev/null 2>&1; then
+              echo "✅ ARM64 image found via buildx imagetools"
             else
-              echo "⚠️  Skipping ARM64 local load (can't load ARM64 on ${CURRENT_ARCH} machine)"
-              echo "    ARM64 image built and cached, use --push to publish to registry"
+              echo "❌ ARM64 image verification failed completely"
+              exit 1
             fi
           fi
 
