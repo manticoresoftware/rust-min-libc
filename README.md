@@ -12,8 +12,8 @@ It supports both **amd64** and **aarch64** architectures with optimized library 
 ### Available Tags
 
 **Architecture-Specific Tags (Full Version Details):**
-- `ghcr.io/manticoresoftware/rust-min-libc:amd64-rust1.86.0-glibc2.17-openssl1.0.1u` - AMD64 with all versions
-- `ghcr.io/manticoresoftware/rust-min-libc:aarch64-rust1.86.0-glibc2.28-openssl1.1.1w` - ARM64 with all versions
+- `ghcr.io/manticoresoftware/rust-min-libc:amd64-rust1.86.0-glibc2.28-openssl1.1.1k` - AMD64 with all versions
+- `ghcr.io/manticoresoftware/rust-min-libc:aarch64-rust1.86.0-glibc2.28-openssl1.1.1k` - ARM64 with all versions
 
 ## Key Features
 
@@ -27,8 +27,8 @@ It supports both **amd64** and **aarch64** architectures with optimized library 
 
 | Architecture | Target Triple | glibc | OpenSSL | Compatibility |
 |--------------|---------------|-------|---------|---------------|
-| **amd64** | `x86_64-ubuntu14.04-linux-gnu` | **2.17** | **1.0.1u** | Ubuntu 12.04+, CentOS 7+ |
-| **arm64** | `aarch64-unknown-linux-gnu` | **2.28** | **1.1.1w** | Ubuntu 18.04+, CentOS 8+ |
+| **amd64** | `x86_64-ubuntu14.04-linux-gnu` | **2.28** | **1.1.1k** | Ubuntu 18.04+, CentOS 8+ |
+| **arm64** | `aarch64-unknown-linux-gnu` | **2.28** | **1.1.1k** | Ubuntu 18.04+, CentOS 8+ |
 
 > **Why different versions?** ARM64 support was added to glibc in version 2.18, while x86_64 has been supported since much earlier versions. This allows us to use the absolute minimum glibc version for each architecture.
 
@@ -44,7 +44,7 @@ docker container run --rm --volume "$(pwd)":/src \
 
 ### Architecture-Specific Builds
 ```shell
-# Build for x86_64 with minimal glibc 2.17
+# Build for x86_64 with minimal glibc 2.28
 docker run --platform linux/amd64 --rm -v "$(pwd)":/src \
     ghcr.io/manticoresoftware/rust-min-libc build --release
 
@@ -62,7 +62,7 @@ docker run --rm ghcr.io/manticoresoftware/rust-min-libc --version
 ```shell
 # Use architecture-specific tags with full version details
 docker run --platform linux/amd64 --rm -v "$(pwd)":/src \
-    ghcr.io/manticoresoftware/rust-min-libc:amd64-rust1.86.0-glibc2.17-openssl1.0.1u build --release
+    ghcr.io/manticoresoftware/rust-min-libc:amd64-rust1.86.0-glibc2.28-openssl1.1.1k build --release
 
 docker run --platform linux/arm64 --rm -v "$(pwd)":/src \
     ghcr.io/manticoresoftware/rust-min-libc:aarch64-rust1.86.0-glibc2.28-openssl1.1.1w build --release

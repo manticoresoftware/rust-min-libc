@@ -22,7 +22,7 @@ RUN curl http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.27.0.tar.x
 		&& case "${TARGETARCH}" in \
         "amd64") \
             /home/rust/ct-ng/bin/ct-ng x86_64-ubuntu14.04-linux-gnu \
-            && sed -i 's/CT_GLIBC_VERSION="[^"]*"/CT_GLIBC_VERSION="2.17"/' .config \
+            && sed -i 's/CT_GLIBC_VERSION="[^"]*"/CT_GLIBC_VERSION="2.28"/' .config \
             && /home/rust/ct-ng/bin/ct-ng build -j8 \
             && chmod u+w /home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu \
             && chmod u+w /home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu/*; \
@@ -44,8 +44,8 @@ RUN curl http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.27.0.tar.x
 # Build OpenSSL - keep AMD64 exactly as original, add ARM64 equivalent
 RUN case "${TARGETARCH}" in \
         "amd64") \
-            curl --location https://www.openssl.org/source/old/1.0.1/openssl-1.0.1u.tar.gz | tar -xzf - \
-            && cd openssl-1.0.1u \
+            curl --location https://www.openssl.org/source/old/1.0.1/openssl-1.1.1k.tar.gz | tar -xzf - \
+            && cd openssl-1.1.1k \
             && export PATH=/home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu/bin:$PATH \
             && ./config -fPIC no-shared --prefix=/home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu \
             && make -j8 CC=x86_64-ubuntu14.04-linux-gnu-cc \
