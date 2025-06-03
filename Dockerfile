@@ -22,14 +22,14 @@ RUN curl http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.27.0.tar.x
 		&& case "${TARGETARCH}" in \
         "amd64") \
             /home/rust/ct-ng/bin/ct-ng x86_64-ubuntu14.04-linux-gnu \
-            && sed -i 's/CT_GLIBC_VERSION="[^"]*"/CT_GLIBC_VERSION="2.28"/' .config \
+            && sed -i 's/CT_GLIBC_VERSION="[^"]*"/CT_GLIBC_VERSION="2.27"/' .config \
             && /home/rust/ct-ng/bin/ct-ng build -j8 \
             && chmod u+w /home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu \
             && chmod u+w /home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu/*; \
             ;; \
         "arm64") \
             /home/rust/ct-ng/bin/ct-ng aarch64-unknown-linux-gnu \
-            && sed -i 's/CT_GLIBC_VERSION="[^"]*"/CT_GLIBC_VERSION="2.28"/' .config \
+            && sed -i 's/CT_GLIBC_VERSION="[^"]*"/CT_GLIBC_VERSION="2.27"/' .config \
             && sed -i 's/CT_LINUX_VERSION="[^"]*"/CT_LINUX_VERSION="4.20.8"/' .config \
             && sed -i 's/CT_ARCH_64="[^"]*"/CT_ARCH_64="y"/' .config \
             && sed -i 's/CT_ARCH_ARCH="[^"]*"/CT_ARCH_ARCH="armv8-a"/' .config \

@@ -13,9 +13,9 @@ PUSH="${PUSH:-false}"  # Set to true for publishing to registry
 RUST_VERSION="1.86.0"
 
 # Architecture-specific versions
-AMD64_GLIBC_VERSION="2.28"
+AMD64_GLIBC_VERSION="2.27"
 AMD64_OPENSSL_VERSION="1.1.1k"
-ARM64_GLIBC_VERSION="2.28"
+ARM64_GLIBC_VERSION="2.27"
 ARM64_OPENSSL_VERSION="1.1.1k"
 
 # Generate architecture-specific tags
