@@ -12,8 +12,8 @@ It supports both **amd64** and **aarch64** architectures with optimized library 
 ### Available Tags
 
 **Architecture-Specific Tags (Full Version Details):**
-- `ghcr.io/manticoresoftware/rust-min-libc:amd64-rust1.86.0-glibc2.27-openssl1.1.1k` - AMD64 with all versions
-- `ghcr.io/manticoresoftware/rust-min-libc:aarch64-rust1.86.0-glibc2.27-openssl1.1.1k` - ARM64 with all versions
+- `ghcr.io/manticoresoftware/rust-min-libc:amd64-rust1.92.0-glibc2.27-openssl1.1.1k` - AMD64 with all versions
+- `ghcr.io/manticoresoftware/rust-min-libc:aarch64-rust1.92.0-glibc2.27-openssl1.1.1k` - ARM64 with all versions
 
 ## Key Features
 
@@ -62,10 +62,10 @@ docker run --rm ghcr.io/manticoresoftware/rust-min-libc --version
 ```shell
 # Use architecture-specific tags with full version details
 docker run --platform linux/amd64 --rm -v "$(pwd)":/src \
-    ghcr.io/manticoresoftware/rust-min-libc:amd64-rust1.86.0-glibc2.27-openssl1.1.1k build --release
+    ghcr.io/manticoresoftware/rust-min-libc:amd64-rust1.92.0-glibc2.27-openssl1.1.1k build --release
 
 docker run --platform linux/arm64 --rm -v "$(pwd)":/src \
-    ghcr.io/manticoresoftware/rust-min-libc:aarch64-rust1.86.0-glibc2.27-openssl1.1.1w build --release
+    ghcr.io/manticoresoftware/rust-min-libc:aarch64-rust1.92.0-glibc2.27-openssl1.1.1w build --release
 ```
 
 ## Compatibility Testing
