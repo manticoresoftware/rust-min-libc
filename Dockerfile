@@ -76,6 +76,25 @@ RUN groupadd rust -g 2000 \
     && apt-get update \
     && apt-get install -y --no-install-recommends make libfindbin-libs-perl
 
+# Install oneMKL static libraries for x86_64 builds.
+# Provides hgemm_ (half-precision GEMM) which is missing from the older
+# MKL 2020.1 bundled by intel-mkl-src v0.8.1.
+RUN if [ "${TARGETARCH}" = "amd64" ]; then \
+        apt-get install -y --no-install-recommends wget gnupg \
+        && wget -qO- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+            | gpg --dearmor > /usr/share/keyrings/oneapi-archive-keyring.gpg \
+        && echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
+            > /etc/apt/sources.list.d/oneAPI.list \
+        && apt-get update \
+        && apt-get install -y --no-install-recommends intel-oneapi-mkl-devel \
+        && find /opt/intel -name 'libiomp5.so*' -delete \
+        && apt-get purge -y wget gnupg \
+        && apt-get autoremove -y \
+        && rm -rf /var/lib/apt/lists/*; \
+    fi
+
+ENV MKLROOT=/opt/intel/oneapi/mkl/latest
+
 # Configure Cargo for the target architecture with build-id support
 RUN case "${TARGETARCH}" in \
         "amd64") \
