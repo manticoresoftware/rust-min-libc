@@ -10,7 +10,7 @@ IMAGE_NAME="${IMAGE_NAME:-ghcr.io/manticoresoftware/rust-min-libc}"
 PUSH="${PUSH:-false}"  # Set to true for publishing to registry
 
 # Configuration
-RUST_VERSION="1.92.0"
+RUST_VERSION="1.94.1"
 
 # Architecture-specific versions
 AMD64_GLIBC_VERSION="2.27"

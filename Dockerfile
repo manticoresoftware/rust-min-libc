@@ -62,7 +62,7 @@ RUN case "${TARGETARCH}" in \
             ;; \
     esac
 
-FROM rust:1.92.0-slim-bookworm
+FROM rust:1.94.1-slim-bookworm
 
 # Pass build arguments to final stage
 ARG TARGETARCH
