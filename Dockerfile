@@ -115,10 +115,11 @@ RUN case "${TARGETARCH}" in \
             ;; \
     esac
 
-# Remove dynamic libstdc++.so to force static linking of libstdc++.a.
-# This ensures the resulting .so has no GLIBCXX version requirements,
-# allowing it to run on older systems (AlmaLinux 8, Ubuntu 18.04, etc.).
-RUN find / -name 'libstdc++.so*' -not -name '*.py' -delete 2>/dev/null; true
+# Remove dynamic libstdc++.so from cross-toolchain sysroot only,
+# forcing the linker to use libstdc++.a for static linking.
+# This ensures the resulting .so has no GLIBCXX version requirements.
+# Keep system libstdc++ intact (needed by apt-get, etc.).
+RUN find /usr/local/x-tools -name 'libstdc++.so*' -not -name '*.py' -delete 2>/dev/null; true
 
 # Set PATH to include both toolchains (only the appropriate one will exist)
 ENV PATH=/usr/local/x-tools/x86_64-ubuntu14.04-linux-gnu/bin:/usr/local/x-tools/aarch64-unknown-linux-gnu/bin:${PATH}
