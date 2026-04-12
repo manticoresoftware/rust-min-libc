@@ -100,7 +100,7 @@ RUN case "${TARGETARCH}" in \
         "amd64") \
             echo "[target.x86_64-unknown-linux-gnu]" > /usr/local/cargo/config.toml \
             && echo "linker = 'x86_64-ubuntu14.04-linux-gnu-cc'" >> /usr/local/cargo/config.toml \
-            && echo "rustflags = [\"-C\", \"link-arg=-Wl,--build-id=sha1\", \"-C\", \"link-arg=-static-libstdc++\"]" >> /usr/local/cargo/config.toml \
+            && echo "rustflags = [\"-C\", \"link-arg=-Wl,--build-id=sha1\"]" >> /usr/local/cargo/config.toml \
             && echo "export OPENSSL_DIR=/usr/local/x-tools/x86_64-ubuntu14.04-linux-gnu" >> /etc/environment \
             && echo "export ARCH_TARGET=x86_64-ubuntu14.04-linux-gnu" >> /etc/environment \
             && echo "export RUST_TARGET=x86_64-unknown-linux-gnu" >> /etc/environment; \
@@ -108,12 +108,17 @@ RUN case "${TARGETARCH}" in \
         "arm64") \
             echo "[target.aarch64-unknown-linux-gnu]" > /usr/local/cargo/config.toml \
             && echo "linker = 'aarch64-unknown-linux-gnu-cc'" >> /usr/local/cargo/config.toml \
-            && echo "rustflags = [\"-C\", \"link-arg=-Wl,--build-id=sha1\", \"-C\", \"link-arg=-static-libstdc++\"]" >> /usr/local/cargo/config.toml \
+            && echo "rustflags = [\"-C\", \"link-arg=-Wl,--build-id=sha1\"]" >> /usr/local/cargo/config.toml \
             && echo "export OPENSSL_DIR=/usr/local/x-tools/aarch64-unknown-linux-gnu" >> /etc/environment \
             && echo "export ARCH_TARGET=aarch64-unknown-linux-gnu" >> /etc/environment \
             && echo "export RUST_TARGET=aarch64-unknown-linux-gnu" >> /etc/environment; \
             ;; \
     esac
+
+# Remove dynamic libstdc++.so to force static linking of libstdc++.a.
+# This ensures the resulting .so has no GLIBCXX version requirements,
+# allowing it to run on older systems (AlmaLinux 8, Ubuntu 18.04, etc.).
+RUN find / -name 'libstdc++.so*' -not -name '*.py' -delete 2>/dev/null; true
 
 # Set PATH to include both toolchains (only the appropriate one will exist)
 ENV PATH=/usr/local/x-tools/x86_64-ubuntu14.04-linux-gnu/bin:/usr/local/x-tools/aarch64-unknown-linux-gnu/bin:${PATH}
