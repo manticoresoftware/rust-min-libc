@@ -115,17 +115,16 @@ RUN case "${TARGETARCH}" in \
             ;; \
     esac
 
-# Remove dynamic libstdc++.so from cross-toolchain sysroot only,
-# forcing the linker to use libstdc++.a for static linking.
-# This ensures the resulting .so has no GLIBCXX version requirements.
-# Keep system libstdc++ intact (needed by apt-get, etc.).
-RUN find /usr/local/x-tools -name 'libstdc++.so*' -not -name '*.py' -delete 2>/dev/null; true
-
 # Set PATH to include both toolchains (only the appropriate one will exist)
 ENV PATH=/usr/local/x-tools/x86_64-ubuntu14.04-linux-gnu/bin:/usr/local/x-tools/aarch64-unknown-linux-gnu/bin:${PATH}
 
 # Set default RUSTFLAGS with build-id (can be overridden at runtime)
 ENV RUSTFLAGS="-C link-arg=-Wl,--build-id=sha1"
+
+# Remove ALL dynamic libstdc++.so (system + cross-toolchain) to force
+# static linking of libstdc++.a. This eliminates GLIBCXX version requirements.
+# Must be the LAST step — nothing after this can use apt-get or system g++.
+RUN find / -name 'libstdc++.so*' -not -name '*.py' -not -path '/proc/*' -delete 2>/dev/null; true
 
 USER rust
 WORKDIR /src
