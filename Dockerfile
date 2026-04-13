@@ -74,7 +74,7 @@ COPY --from=builder /home/rust/x-tools /usr/local/x-tools
 RUN groupadd rust -g 2000 \
     && useradd -m -g rust -u 2000 rust \
     && apt-get update \
-    && apt-get install -y --no-install-recommends make libfindbin-libs-perl
+    && apt-get install -y --no-install-recommends make libfindbin-libs-perl gcc g++ protobuf-compiler
 
 # Install oneMKL static libraries for x86_64 builds.
 # Provides hgemm_ (half-precision GEMM) which is missing from the older
