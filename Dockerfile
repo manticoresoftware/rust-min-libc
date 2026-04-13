@@ -95,7 +95,8 @@ RUN if [ "${TARGETARCH}" = "amd64" ]; then \
 
 ENV MKLROOT=/opt/intel/oneapi/mkl/latest
 
-# Configure Cargo for the target architecture with build-id support
+# Configure Cargo for the target architecture with build-id support.
+# Use both config.toml AND env vars — env vars work even when CARGO_HOME is overridden.
 RUN case "${TARGETARCH}" in \
         "amd64") \
             echo "[target.x86_64-unknown-linux-gnu]" > /usr/local/cargo/config.toml \
@@ -114,6 +115,12 @@ RUN case "${TARGETARCH}" in \
             && echo "export RUST_TARGET=aarch64-unknown-linux-gnu" >> /etc/environment; \
             ;; \
     esac
+
+# Env vars that override config.toml (works even when CARGO_HOME is changed)
+ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="x86_64-ubuntu14.04-linux-gnu-cc"
+ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C link-arg=-Wl,--build-id=sha1 -C link-arg=-L/usr/local/x-tools/x86_64-ubuntu14.04-linux-gnu/x86_64-ubuntu14.04-linux-gnu/sysroot/lib"
+ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER="aarch64-unknown-linux-gnu-cc"
+ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C link-arg=-Wl,--build-id=sha1 -C link-arg=-L/usr/local/x-tools/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/lib"
 
 # Set PATH to include both toolchains (only the appropriate one will exist)
 ENV PATH=/usr/local/x-tools/x86_64-ubuntu14.04-linux-gnu/bin:/usr/local/x-tools/aarch64-unknown-linux-gnu/bin:${PATH}
