@@ -62,7 +62,7 @@ RUN case "${TARGETARCH}" in \
             ;; \
     esac
 
-FROM rust:1.94.1-slim-bookworm
+FROM rust:1.95.0-slim-bookworm
 
 # Pass build arguments to final stage
 ARG TARGETARCH
@@ -79,6 +79,11 @@ RUN groupadd rust -g 2000 \
 # Install oneMKL static libraries for x86_64 builds.
 # Provides hgemm_ (half-precision GEMM) which is missing from the older
 # MKL 2020.1 bundled by intel-mkl-src v0.8.1.
+#
+# Modern oneMKL (2024+) drops the lib/intel64/ subdir and puts archives in lib/,
+# while intel-mkl-src 0.8.1 still expects lib/intel64/. Symlink the old path so
+# the build script finds the archives. libiomp5.a lives under the compiler
+# package; symlink it into MKL's lib too so `-liomp5` resolves.
 RUN if [ "${TARGETARCH}" = "amd64" ]; then \
         apt-get install -y --no-install-recommends wget gnupg \
         && wget -qO- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
@@ -88,6 +93,12 @@ RUN if [ "${TARGETARCH}" = "amd64" ]; then \
         && apt-get update \
         && apt-get install -y --no-install-recommends intel-oneapi-mkl-devel \
         && find /opt/intel -name 'libiomp5.so*' -delete \
+        && ln -sfn . /opt/intel/oneapi/mkl/latest/lib/intel64 \
+        && ln -sf /opt/intel/oneapi/compiler/latest/lib/libiomp5.a /opt/intel/oneapi/mkl/latest/lib/libiomp5.a \
+        && test -f /opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_intel_lp64.a \
+        && test -f /opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_intel_thread.a \
+        && test -f /opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_core.a \
+        && test -f /opt/intel/oneapi/mkl/latest/lib/intel64/libiomp5.a \
         && apt-get purge -y wget gnupg \
         && apt-get autoremove -y \
         && rm -rf /var/lib/apt/lists/*; \
