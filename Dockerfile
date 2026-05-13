@@ -44,7 +44,7 @@ RUN curl http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.27.0.tar.x
 # Build OpenSSL - keep AMD64 exactly as original, add ARM64 equivalent
 RUN case "${TARGETARCH}" in \
         "amd64") \
-            curl --location https://www.openssl.org/source/old/1.0.1/openssl-1.1.1k.tar.gz | tar -xzf - \
+            curl --location https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1k/openssl-1.1.1k.tar.gz | tar -xzf - \
             && cd openssl-1.1.1k \
             && export PATH=/home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu/bin:$PATH \
             && ./config -fPIC no-shared --prefix=/home/rust/x-tools/x86_64-ubuntu14.04-linux-gnu \
@@ -52,7 +52,7 @@ RUN case "${TARGETARCH}" in \
             && make install_sw; \
             ;; \
         "arm64") \
-            curl --location https://www.openssl.org/source/openssl-1.1.1w.tar.gz | tar -xzf - \
+            curl --location https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/openssl-1.1.1w.tar.gz | tar -xzf - \
             && cd openssl-1.1.1w \
             && export PATH=/home/rust/x-tools/aarch64-unknown-linux-gnu/bin:$PATH \
             && ./Configure linux-aarch64 -fPIC no-shared --prefix=/home/rust/x-tools/aarch64-unknown-linux-gnu \
